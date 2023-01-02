@@ -1,0 +1,141 @@
+<html>
+<head>
+
+    <script src="https://cdn.zinggrid.com/zinggrid.min.js" nonce="undefined"></script>
+    <script>
+        function footCellFunc(arg1, arg2, arg3) {
+
+        }
+
+        function diff(start, end) {
+            start = start.split(":");
+            end = end.split(":");
+            let startDate = new Date(0, 0, 0, start[0], start[1], 0);
+            let endDate = new Date(0, 0, 0, end[0], end[1], 0);
+            let diff = endDate.getTime() - startDate.getTime();
+            let hours = Math.floor(diff / 1000 / 60 / 60);
+            diff -= hours * 1000 * 60 * 60;
+            let minutes = Math.floor(diff / 1000 / 60);
+            return (hours < 9 ? "0" : "") + hours + ":" + (minutes < 9 ? "0" : "") + minutes;
+        }
+
+        function noIndexCellRenderer(stubArgument, cellDOMRef, $cellRef) {
+            // get reference to select dropdown
+            const {startTime, endTime, id} = $cellRef.record;
+            const divSelector = cellDOMRef.querySelector('div');
+            const spanChild = document.createElement('span');
+            spanChild.textContent = diff(startTime, endTime);
+            spanChild.value = "value";
+            divSelector.appendChild(spanChild);
+        }
+
+    </script>
+    <style>
+        .zg-body {
+            background: #e6e6e6;
+        }
+
+        zing-grid[loading] {
+            height: 415px;
+        }
+
+        zing-grid {
+            --zg-foot-border: 1px solid blue;
+        }
+    </style>
+</head>
+<body class="zg-body">
+<zing-grid
+        columns-control column-drag layout-controls pager search sort page-size="40" page-size-options="10,20,30,40"
+        viewport-stop
+        gridlines="both"
+        src="https://trackwork.herokuapp.com/work"
+        static-menu>
+    <zg-caption align="center">Rais Work</zg-caption>
+
+
+    <zg-colgroup>
+        <!-- default type is text -->
+        <zg-column index="date" type="date" type-date-format="DD/MM/YYYY, dddd " sort-desc></zg-column>
+        <!-- explicitly set text -->
+        <zg-column type="time" index="startTime"></zg-column>
+        <!-- set image column type -->
+        <zg-column type="time" index="endTime"></zg-column>
+        <zg-column index="duration" renderer="noIndexCellRenderer" editor="false" foot-cell="sum">
+            <div></div>
+
+        </zg-column>
+        <!-- set url column type -->
+        <zg-column index="clientName" filter type="select"
+                   type-select-options="Abhishek, Sai, LincoIn, Tara, Madhuri, Harika, Kavya"></zg-column>
+        <zg-column type="text" index="description"></zg-column>
+
+        <zg-column index="date" type="date" type-date-from-now></zg-column>
+    </zg-colgroup>
+
+</zing-grid>
+<div id="totalTime"></div>
+</body>
+<script>
+
+    function displayData (zgRef, columnIndex, columnFilterValue) {
+        const data = zgRef.getData();
+        let totalDuration = 0
+        let totalHour = 0
+        let totalMinute = 0
+        data.forEach(function (record) {
+            if(columnIndex && columnFilterValue) {
+                if(record[columnIndex]!== columnFilterValue){
+                    return
+                }
+            }
+            totalDuration += getDifferenceMinutes(record.endTime, record.startTime)
+        });
+        const mainFoot = document.getElementById("mainfoot");
+        const durationFoot = mainFoot.querySelector('[data-field-index="duration"]');
+        const value = durationFoot.getElementsByClassName("aggregate-value");
+        const colon = durationFoot.getElementsByClassName("aggregate-colon");
+        const label = durationFoot.getElementsByClassName("aggregate-label");
+
+        totalHour = Math.floor((totalDuration / 60))
+        totalMinute = totalDuration % 60;
+        const txt = (totalHour < 9 ? "0" : "") + totalHour + ":" + (totalMinute < 9 ? "0" : "") + totalMinute;
+        label[0].innerHTML = "Total ";
+        colon[0].innerHTML = "";
+        value[0].innerHTML = txt;
+
+    }
+    function getDateFromHours(time) {
+        time = time.split(':');
+        let now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), ...time);
+    }
+
+    function getDifferenceMinutes(endTime, startTime) {
+        let diff = (getDateFromHours(endTime).getTime() - getDateFromHours(startTime).getTime()) / 1000;
+        diff /= 60;
+        return Math.abs(Math.round(diff));
+    }
+    window.addEventListener('load', () => {
+        const zgRef = document.querySelector('zing-grid');
+        zgRef.addEventListener('column:filter', function(e) {
+            filterData(zgRef, e.detail.ZGData.fieldIndex, e.detail.ZGData.filterValue );
+        });
+        zgRef.executeOnLoad(function () {
+            displayData(zgRef)
+
+
+        });
+    });
+    function waitforme(milisec) {
+        return new Promise(resolve => {
+            setTimeout(() => { resolve('') }, milisec);
+        })
+    }
+
+    async function filterData(zgRef, columnIndex, columnFilterValue) {
+        await waitforme(300);
+        displayData(zgRef, columnIndex, columnFilterValue)
+    }
+</script>
+</html>

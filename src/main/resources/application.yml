@@ -1,0 +1,12 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb+srv://trackwork:trackworkPassword@cluster0.3yi4l.mongodb.net/trackwork
+      database: trackwork
+
+logging:
+  level:
+    root: ERROR
+    org.springframework.web: ERROR
+    com.example: DEBUG
+    org.hibernate: ERROR
